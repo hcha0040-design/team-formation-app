@@ -1,0 +1,15 @@
+# 비밀 정보 (API 키 등) - 절대 커밋하지 않음
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# 과제 공고 사본 (참고용, 저장소에 올리지 않음)
+_ref/
+
+# 테스트 실행 시 생성되는 파일
+test_image.png
