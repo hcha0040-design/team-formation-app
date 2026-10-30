@@ -1,6 +1,7 @@
 """연습 시나리오를 마감까지 진행한 뒤, 실제 AI 모델로 배정하고 확정해 본다(무료 호출 1~3회를 씀).
 
 실행: py scripts/ui_check_real_ai.py [쉬움|중간|어려움]   (기본 쉬움)
+      py scripts/ui_check_real_ai.py --keep   (명단을 바꾸지 않고 지금 DB 상태 그대로 배정)
 주의: 실행하면 DB의 명단이 바뀐다.
 """
 
@@ -21,7 +22,8 @@ from tf import db  # noqa: E402
 from tf.rules import _team_problems  # noqa: E402
 
 name = sys.argv[1] if len(sys.argv) > 1 else "쉬움"
-subprocess.run([sys.executable, str(ROOT / "scripts" / "run_scenarios.py"), name], check=True, capture_output=True)
+if name != "--keep":
+    subprocess.run([sys.executable, str(ROOT / "scripts" / "run_scenarios.py"), name], check=True, capture_output=True)
 
 at = AppTest.from_file(str(ROOT / "streamlit_app.py"), default_timeout=60)
 at.run()
