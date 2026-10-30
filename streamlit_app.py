@@ -13,9 +13,13 @@ db.init_db()
 def login_screen() -> None:
     st.title("팀 편성")
     render_result()
-    student_no = st.text_input("학번", key="login_student_no")
-    password = st.text_input("비밀번호", type="password", key="login_password")
-    if st.button("로그인", key="login_submit", type="primary"):
+    # 학번과 비밀번호를 폼으로 묶어 로그인 단추를 누를 때 한 번에 보낸다.
+    # (칸마다 따로 보내면 빠르게 입력할 때 다시 그리기와 겹쳐 학번이 빠진 채 로그인되는 일이 있었음)
+    with st.form("login_form", border=False):
+        student_no = st.text_input("학번", key="login_student_no")
+        password = st.text_input("비밀번호", type="password", key="login_password")
+        submitted = st.form_submit_button("로그인", key="login_submit", type="primary")
+    if submitted:
         account = db.authenticate(student_no, password)
         if account is None:
             set_result("막힘: 학번 또는 비밀번호가 틀림")
