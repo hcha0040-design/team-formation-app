@@ -26,7 +26,7 @@ def login_screen() -> None:
 
 
 def logout() -> None:
-    for key in ("account", RESULT_KEY, "plan"):
+    for key in ("account", RESULT_KEY, "assign_job", "assign_infeasible"):
         st.session_state.pop(key, None)
 
 

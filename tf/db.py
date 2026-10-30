@@ -12,7 +12,7 @@ import streamlit as st
 
 from config import get_secret
 from tf.models import Student
-from tf.rules import check_join
+from tf.rules import Plan, check_join, validate_assignment
 
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schema.sql"
 STUDENT_PASSWORD = "1234"  # 공고 2.2절: 학생의 비밀번호는 모두 1234
@@ -393,3 +393,45 @@ def _close(cur) -> str:
 
 def close_recruiting() -> str:
     return run(_close)
+
+
+# ---------------------------------------------------------------- 배정 확정과 AI 기록
+
+def snapshot(state: State) -> tuple[dict[int, list[Student]], list[Student]]:
+    """배정에 쓰는 형태로 바꾼다: 팀 번호 → 팀원 목록, 팀이 없는 학생 목록."""
+    teams = {team_id: [state.students[s] for s in members] for team_id, members in state.teams.items()}
+    return teams, [state.students[s] for s in state.unassigned()]
+
+
+def _confirm(cur, plan: Plan) -> str:
+    cur.execute("lock table tf_members in exclusive mode")
+    if not _is_closed(cur):
+        return "막힘: 모집을 마감한 뒤에 확정할 수 있음"
+    state = _load_state(cur)
+    teams, unassigned = snapshot(state)
+    # 배정안을 받은 뒤 상태가 바뀌었을 수 있으므로 확정 직전에 다시 검사한다.
+    problems = validate_assignment(teams, unassigned, plan)
+    if problems:
+        return "막힘: 배정안이 지금 상태와 맞지 않음 — " + "; ".join(problems[:3])
+    ids = {s.student_no: s.id for s in unassigned}
+    for student_no, team_id in plan:
+        _add_member(cur, team_id, ids[student_no])
+    return f"승인: 배정안을 확정함({len(plan)}명 배정)"
+
+
+def confirm_assignment(plan: Plan) -> str:
+    try:
+        return run(_confirm, plan)
+    except psycopg2.IntegrityError:
+        return "막힘: 다른 처리와 겹쳐 확정하지 못함. 다시 시도해 주세요"
+
+
+def _log_ai(cur, attempts) -> None:
+    for a in attempts:
+        cur.execute("insert into tf_ai_logs (attempt, model, outcome, detail, elapsed_sec) values (%s, %s, %s, %s, %s)",
+                    (a.number, a.model, a.outcome, a.detail, a.elapsed))
+
+
+def log_ai(attempts) -> None:
+    if attempts:
+        run(_log_ai, attempts)
