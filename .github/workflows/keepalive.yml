@@ -1,0 +1,32 @@
+# Supabase 무료 프로젝트가 1주일 동안 요청이 적어 일시정지되지 않도록 매일 DB에 질의를 한 번 보낸다(공고 3장 어려운 해결).
+# DATABASE_URL 은 저장소 Settings > Secrets and variables > Actions 에 넣는다. 값은 로그에 나오지 않는다.
+name: DB keepalive
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # 매일 00:00 UTC = 09:00 한국 시각
+  workflow_dispatch:       # Actions 화면에서 직접 실행할 수도 있음
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install psycopg2-binary==2.9.13
+      - name: DB에 질의 보내기
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          python - <<'EOF'
+          import os, datetime, psycopg2
+          conn = psycopg2.connect(os.environ["DATABASE_URL"], connect_timeout=20)
+          with conn, conn.cursor() as cur:
+              cur.execute("select count(*) from tf_students")
+              students = cur.fetchone()[0]
+          conn.close()
+          kst = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+          print(f"{kst:%Y-%m-%d %H:%M} (한국 시각) DB 질의 성공: tf_students {students}행")
+          EOF
