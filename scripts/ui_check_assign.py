@@ -1,6 +1,7 @@
 """마감 → AI 배정 → 확정을 화면(AppTest)으로 해 보고, 확정한 팀이 규칙을 지키는지 DB 에서 다시 검사한다.
 
 AI 호출은 가짜로 바꿔(실제 호출 없음, 무료 횟수를 쓰지 않음) 실패 처리를 시험한다.
+가짜 시험의 기록이 tf_ai_logs 에 실제 기록처럼 남지 않도록, 모델 이름을 test/ 로 시작하게 하고 끝에 지운다.
 실행: py scripts/ui_check_assign.py
 주의: 실행하면 DB의 명단이 바뀐다.
 """
@@ -23,6 +24,7 @@ from tf.models import Student  # noqa: E402
 from tf.rules import _team_problems  # noqa: E402
 
 failures = 0
+ai.MODELS = ["test/가짜-1차", "test/가짜-2차", "test/가짜-3차"]
 
 
 def expect(label: str, ok: bool, detail: str = "") -> None:
@@ -124,4 +126,9 @@ expect("배정 불가: assign_status 에 이유", "규칙을 지키는 배정이
        next((t for t in texts(at).split("\n") if "웹 프로그래머" in t), ""))
 expect("배정 불가: 확정 단추 없음", not any(b.key == "admin_confirm" for b in at.button))
 
+def _drop_fake_logs(cur):
+    cur.execute("delete from tf_ai_logs where model like 'test/%'")
+
+
+db.run(_drop_fake_logs)
 print("모두 통과" if failures == 0 else f"{failures}개 다름")

@@ -38,13 +38,18 @@ https://team-formation-app-bwqebxmhscuxwuqj8t47pu.streamlit.app
 
 ## 5. 오픈라우터 AI 모델 호출 실패 사례
 
+0. **배포한 앱에서 1차 시간 초과 → 2차 빈 응답 → 3차 성공**: 10/30 17:11(한국 시각), 배포한 앱에서 부록 3(어려움) 15단계의 AI 배정을 했다.
+   - 1차 `nvidia/nemotron-3-ultra-550b-a55b:free`는 **120.1초** 동안 응답을 다 받지 못해 앱이 끊었다.
+   - 2차 `nvidia/nemotron-3.5-super-vl:free`는 42.7초 만에 **빈 응답**을 냈다.
+   - 3차 `google/gemma-4-31b-it:free`가 97.5초 만에 낸 배정안(8명)이 검사 5가지를 통과했다.
+   - 확정한 팀 4개는 모두 4명이고 규칙을 지켰다. 기록은 DB `tf_ai_logs`에 남아 있다. (화면 `img/ai-fail.png`)
 1. **HTTP 429로 거절됨**: 10/30 오후 `google/gemma-4-31b-it:free`를 부르자 2.0초 만에 "HTTP 429 Provider returned error"가 왔다(사용량이 많아 제공자가 거절). 앱은 이를 실패로 보고 다음 모델로 넘어간다. 이 모델은 3차로 두었다.
 2. **검사에서 걸러 낸 배정안**: `poolside/laguna-s-2.1:free`가 4.7초 만에 배정안을 냈지만 "팀2에 필수 포함 역할을 채우지 못함, 팀3에 주 역할 기획자가 2명"이라 앱이 불합격 처리했다. 그래서 이 모델은 쓰지 않았다.
 3. **빈 응답**: `dots-studio/dots-3-note-preview:free`가 57.6초 동안 생각한 뒤 내용 없이 답했다. 앱은 빈 응답도 실패로 처리한다.
 4. **쓸 수 없는 모델**: `thinkingmachines/inkling:free`는 HTTP 403("지정된 에이전트 앱에서만 쓸 수 있음")으로 거절했다.
 
-- 화면: `img/ai-fail.png` (AI 배정 화면의 `assign_status`에 실패한 시도가 ❌로 남은 모습)
-- 기록: [docs/AI 모델 시험 기록.md](docs/AI%20모델%20시험%20기록.md), DB `tf_ai_logs` 테이블
+- 화면: `img/ai-fail.png` (0번 사례. AI 배정 화면의 `assign_status`에 1차, 2차 시도가 ❌로 남은 모습)
+- 기록: [docs/AI 모델 시험 기록.md](docs/AI%20모델%20시험%20기록.md)(1~4번), DB `tf_ai_logs` 테이블(0번)
 
 ## 6. 클로드가 잘못된 추론이나 답변을 한 사례
 
