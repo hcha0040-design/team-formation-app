@@ -59,7 +59,8 @@ def get_secret(name: str) -> str:
     value = os.environ.get(name, "").strip()
     if not value:
         raise RuntimeError(
-            f"{name} 가 없습니다. 로컬은 .env, 배포한 앱은 Streamlit Secrets 에 넣어 주세요."
+            f"{name} 가 없습니다. 로컬은 .env, 배포한 앱은 Streamlit Secrets 에 넣어 주세요. "
+            "Secrets 는 TOML 형식이라 값을 모두 큰따옴표로 감싸야 하며, 한 줄이라도 틀리면 전체를 읽지 못합니다."
         )
     return value
 
